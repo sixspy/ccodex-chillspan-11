@@ -9,6 +9,11 @@ export const routesViewTemplate = `
     <div><label>车型</label><input v-model="routeForm.vehicle_type"/></div>
   </div>
   <div class="actions"><button @click="createRoute">新建线路</button></div>
+  <p class="hint" v-if="carrierGate.memo">
+    门闸纪要 版本 {{ carrierGate.memo.version || "—" }} ·
+    <span class="badge" :class="carrierGate.memo.sealed ? 'pass' : 'fail'">{{ carrierGate.memo.status || "未封死" }}</span>
+    · 待审核意图 {{ carrierGate.pending_intents || 0 }}
+  </p>
   <table class="data-table">
     <thead><tr><th>编码</th><th>起</th><th>讫</th><th>时长</th><th>车型</th><th>状态</th></tr></thead>
     <tbody>

@@ -47,6 +47,8 @@ createApp({
     const calibrations = ref([]);
     const routes = ref([]);
     const carrierJobs = ref([]);
+    const carrierIntents = ref([]);
+    const carrierGate = ref({ memo: {}, pending_intents: 0 });
     const thawJobs = ref([]);
     const dash = ref({});
 
@@ -104,6 +106,13 @@ createApp({
       vehicle_type: "冷藏车",
     });
     const carrierForm = ref({ carrier_name: "顺冷物流", row_count: 80 });
+    const carrierChangeForm = ref({
+      carrier_name: "顺冷物流",
+      batch_id: 1,
+      row_count: 1,
+      cargo_ref: "",
+      points_json: "",
+    });
     const thawForm = ref({ batch_id: null, thaw_minutes: 15 });
 
     function logout() {
@@ -192,7 +201,7 @@ createApp({
       if (!token.value) return;
       clearFlash();
       try {
-        const [ch, pr, bt, ex, sl, sp, lg, cal, rt, d, cj, tj] = await Promise.all([
+        const [ch, pr, bt, ex, sl, sp, lg, cal, rt, d, cj, cst, ci, tj] = await Promise.all([
           api.chambers(),
           api.probes(),
           api.batches(),
@@ -204,6 +213,8 @@ createApp({
           api.routes(),
           api.dashboard(),
           api.carrierJobs(),
+          api.carrierState(),
+          api.carrierIntents(),
           api.thawJobs(),
         ]);
         chambers.value = ch.items || [];
@@ -217,6 +228,11 @@ createApp({
         routes.value = rt.items || [];
         dash.value = d || {};
         carrierJobs.value = cj.items || [];
+        carrierIntents.value = ci.items || [];
+        carrierGate.value = {
+          memo: cst.memo || {},
+          pending_intents: cst.pending_intents || 0,
+        };
         thawJobs.value = tj.items || [];
 
         if (chambers.value.length && !probeForm.value.chamber_id) {
@@ -433,6 +449,49 @@ createApp({
         flashErr(e);
       }
     }
+    async function doCarrierChange() {
+      clearFlash();
+      try {
+        const f = carrierChangeForm.value;
+        let rows = [];
+        if (f.points_json && f.points_json.trim()) {
+          rows = JSON.parse(f.points_json);
+        }
+        const changes = {};
+        if (f.cargo_ref) changes.cargo_ref = f.cargo_ref;
+        if (rows.length) changes.temp_points = rows;
+        const body = {
+          carrier_name: f.carrier_name,
+          batch_id: f.batch_id,
+          row_count: f.row_count,
+          import_rows: rows,
+          changes,
+        };
+        const row = await api.carrierBatchChange(body);
+        flashOk(`影子导入意图 #${row.intent_id} 待审核 · 正式批未改`);
+        await refresh();
+      } catch (e) {
+        flashErr(e);
+      }
+    }
+    async function reviewCarrierIntent(id, approve) {
+      clearFlash();
+      try {
+        const row = await api.carrierReview(id, {
+          approve,
+          review_note: approve ? "空桩页审核通过" : "空桩页审核拒收",
+          memo_version: carrierGate.value.memo.version,
+        });
+        flashOk(
+          row.promoted
+            ? `意图 #${id} 已晋升`
+            : `意图 #${id} ${row.intent_status}`
+        );
+        await refresh();
+      } catch (e) {
+        flashErr(e);
+      }
+    }
     async function doThawStub() {
       clearFlash();
       try {
@@ -468,6 +527,8 @@ createApp({
       calibrations,
       routes,
       carrierJobs,
+      carrierIntents,
+      carrierGate,
       thawJobs,
       dash,
       chamberDetail,
@@ -489,6 +550,7 @@ createApp({
       calForm,
       routeForm,
       carrierForm,
+      carrierChangeForm,
       thawForm,
       batchProbes,
       openableBatches,
@@ -522,6 +584,8 @@ createApp({
       addCalibration,
       createRoute,
       doCarrierStub,
+      doCarrierChange,
+      reviewCarrierIntent,
       doThawStub,
     };
   },

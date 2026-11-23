@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user
+from carrier_ingest_svc import gate_snapshot, pending_intent_count
 from db import connect
 
 router = APIRouter(tags=["reconcile"])
@@ -33,6 +34,7 @@ def _chamber_recon(conn, chamber) -> dict:
         "sealed_batches": sealed,
         "quota_left": gap,
         "balanced": ok,
+        "carrier_pending_intents": pending_intent_count(conn, cid),
         "proof": {
             "formula": "active_batches <= quota_batches",
             "left": active,
@@ -54,6 +56,7 @@ def reconcile_all(authorization: AuthHeader = None):
                 "total": len(items),
                 "balanced": len(items) - len(bad),
                 "unbalanced": len(bad),
+                "carrier_gate": gate_snapshot(conn),
             },
         }
 

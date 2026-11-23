@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from carrier_ingest_svc import gate_snapshot
 from db import connect, now_iso, write_audit
 from models import RouteIn
 
@@ -17,7 +18,10 @@ def list_routes(authorization: AuthHeader = None):
         rows = conn.execute(
             "SELECT * FROM route_plans ORDER BY id"
         ).fetchall()
-        return {"items": [dict(r) for r in rows]}
+        return {
+            "items": [dict(r) for r in rows],
+            "carrier_gate": gate_snapshot(conn),
+        }
 
 
 @router.get("/api/routes/{route_id}")

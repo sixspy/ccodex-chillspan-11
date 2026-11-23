@@ -4,10 +4,15 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from carrier_ingest_svc import pending_intent_count
 from db import connect, now_iso, write_audit
 from models import ChamberIn
 
 router = APIRouter(tags=["chambers"])
+
+
+def carrier_pending_intents(conn, chamber_id: int | None = None) -> int:
+    return pending_intent_count(conn, chamber_id)
 
 
 @router.get("/api/chambers")
@@ -55,6 +60,7 @@ def get_chamber(chamber_id: int, authorization: AuthHeader = None):
             "recent_batches": [dict(b) for b in batches],
             "active_batch_count": active,
             "quota_left": int(ch["quota_batches"]) - int(active),
+            "carrier_pending_intents": carrier_pending_intents(conn, chamber_id),
         }
 
 

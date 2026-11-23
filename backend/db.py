@@ -193,6 +193,20 @@ CREATE TABLE IF NOT EXISTS thaw_event_jobs(
   detail TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS carrier_import_intents(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  carrier_name TEXT NOT NULL,
+  batch_id INTEGER NOT NULL,
+  row_count INTEGER NOT NULL,
+  changes TEXT NOT NULL,
+  import_rows TEXT NOT NULL,
+  status TEXT NOT NULL,
+  review_note TEXT,
+  created_at TEXT NOT NULL,
+  reviewed_at TEXT,
+  applied_at TEXT,
+  FOREIGN KEY(batch_id) REFERENCES temp_batches(id)
+);
 """
 
 

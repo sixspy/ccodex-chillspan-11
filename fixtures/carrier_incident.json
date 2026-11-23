@@ -1,0 +1,22 @@
+{
+  "scenario": "空桩回写直改正式批（假事故复现夹具）",
+  "carrier_name": "顺冷物流",
+  "batch_code": "TB-CK-HD-01-001",
+  "row_count": 3,
+  "incident_import_rows": [{"t": "08:00", "c": 99.0}],
+  "incident_changes": {"cargo_ref": "承运商回写货载"},
+  "expected": {
+    "path": "A",
+    "status": 409,
+    "batches_changed": 0,
+    "stub_records_added": 0,
+    "official_fields_frozen": [
+      "status",
+      "cargo_ref",
+      "temp_points",
+      "generation",
+      "min_observed",
+      "max_observed"
+    ]
+  }
+}

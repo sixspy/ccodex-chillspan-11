@@ -6,12 +6,27 @@ import json
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from carrier_ingest_svc import pending_review_map
 from db import connect, now_iso, write_audit
 from locks import release, require_lock
 from models import BatchIn
 from validators import summarize_points, validate_probe_online, validate_temp_point
 
 router = APIRouter(tags=["batches"])
+
+
+def _with_review(conn, rows):
+    """批次页审阅态与空桩页同源（carrier_ingest_svc.pending_review_map）。"""
+    review = pending_review_map(conn)
+    items = []
+    for r in rows:
+        d = dict(r)
+        d["temp_points"] = json.loads(d["temp_points"] or "[]")
+        f = review.get(int(d["id"]), {})
+        d["review_state"] = f.get("review_state", "无待审")
+        d["pending_intent_id"] = f.get("pending_intent_id")
+        items.append(d)
+    return items
 
 
 def _next_batch_code(conn, chamber_id: int) -> str:
@@ -45,11 +60,7 @@ def list_batches(authorization: AuthHeader = None, status: str | None = None):
                    JOIN probes p ON p.id=b.probe_id
                    ORDER BY b.id DESC"""
             ).fetchall()
-        items = []
-        for r in rows:
-            d = dict(r)
-            d["temp_points"] = json.loads(d["temp_points"] or "[]")
-            items.append(d)
+        items = _with_review(conn, rows)
         return {"items": items}
 
 
@@ -68,6 +79,9 @@ def get_batch(batch_id: int, authorization: AuthHeader = None):
             raise HTTPException(404, "批次不存在")
         data = dict(row)
         data["temp_points"] = json.loads(data["temp_points"] or "[]")
+        f = pending_review_map(conn).get(int(batch_id), {})
+        data["review_state"] = f.get("review_state", "无待审")
+        data["pending_intent_id"] = f.get("pending_intent_id")
         exc = conn.execute(
             "SELECT * FROM excursion_cursors WHERE batch_id=? ORDER BY id DESC",
             (batch_id,),

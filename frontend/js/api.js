@@ -71,6 +71,12 @@ export function createApi(getToken, onUnauthorized) {
     locks: () => req("/api/locks"),
     dashboard: () => req("/api/dashboard"),
     carrierJobs: () => req("/api/carrier-ingest/jobs"),
+    carrierState: () => req("/api/carrier-ingest/state"),
+    carrierIntents: () => req("/api/carrier-ingest/intents"),
+    carrierBatchChange: (data) =>
+      req("/api/carrier-ingest/batch-change", { method: "POST", body: JSON.stringify(data) }),
+    carrierReview: (id, data) =>
+      req(`/api/carrier-ingest/intents/${id}/review`, { method: "POST", body: JSON.stringify(data) }),
     carrierStub: (data) =>
       req("/api/carrier-ingest-stub", { method: "POST", body: JSON.stringify(data) }),
     thawJobs: () => req("/api/thaw/jobs"),

@@ -82,5 +82,19 @@ class ThawStubIn(BaseModel):
     mode: str = "解冻登记"
 
 
+class CarrierBatchChangeIn(BaseModel):
+    carrier_name: str = Field(min_length=1, max_length=64)
+    batch_id: int
+    row_count: int = Field(ge=1)
+    import_rows: list[dict] = Field(default_factory=list)
+    changes: dict = Field(default_factory=dict)
+
+
+class CarrierIntentReviewIn(BaseModel):
+    approve: bool = True
+    review_note: str = ""
+    memo_version: int | None = None
+
+
 class LockBody(BaseModel):
     lock_key: str

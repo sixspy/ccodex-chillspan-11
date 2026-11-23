@@ -17,7 +17,7 @@ export const reconcileViewTemplate = `
     <p>状态 {{ proofOne.status }} · 开放游标 {{ proofOne.open_excursions }} · 温谱 {{ proofOne.spectrum_exports }}</p>
   </div>
   <table class="data-table">
-    <thead><tr><th>仓间</th><th>区域</th><th>在批</th><th>余配额</th><th>平衡</th></tr></thead>
+    <thead><tr><th>仓间</th><th>区域</th><th>在批</th><th>余配额</th><th>平衡</th><th>承运待审</th></tr></thead>
     <tbody>
       <tr v-for="r in reconAllItems" :key="r.chamber_code">
         <td>{{ r.chamber_code }}</td>
@@ -25,6 +25,7 @@ export const reconcileViewTemplate = `
         <td>{{ r.active_batches }}</td>
         <td>{{ r.quota_left }}</td>
         <td>{{ r.balanced ? "是" : "否" }}</td>
+        <td>{{ r.carrier_pending_intents || 0 }}</td>
       </tr>
     </tbody>
   </table>
